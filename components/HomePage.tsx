@@ -58,8 +58,8 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   return (
     <div className="min-h-screen bg-slate-950 text-white overflow-y-auto custom-scrollbar">
       {/* Hero Section */}
-      <div className="relative pt-20 pb-16 px-6 sm:px-12 md:px-20 max-w-7xl mx-auto text-center">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-indigo-600/20 rounded-full blur-[120px] -z-10"></div>
+      <div className="relative pt-20 pb-16 px-6 sm:px-12 md:px-20 max-w-7xl mx-auto text-center z-10">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-indigo-600/20 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
         <h1 className="text-5xl md:text-7xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 mb-6">
           科学视界
         </h1>
@@ -69,7 +69,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       </div>
 
       {/* Main Menu Grid */}
-      <div className="px-6 pb-20 max-w-7xl mx-auto">
+      <div className="px-6 pb-20 max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((cat) => {
             const Icon = cat.icon;
@@ -80,26 +80,26 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id as Category)}
                 className={`
-                    relative p-6 rounded-2xl cursor-pointer transition-all duration-500 border
+                    relative p-6 rounded-2xl cursor-pointer transition-all duration-500 border overflow-hidden
                     ${isActive 
-                        ? 'bg-slate-900 border-white/20 shadow-2xl scale-105 z-10' 
-                        : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60 hover:border-white/10 hover:shadow-lg'
+                        ? 'bg-slate-900 border-white/20 shadow-2xl scale-105 z-20 ring-1 ring-white/10' 
+                        : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60 hover:border-white/10 hover:shadow-lg z-0'
                     }
                 `}
               >
                 {/* Card Gradient Background */}
-                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${cat.color} opacity-0 ${isActive ? 'opacity-10' : 'group-hover:opacity-5'} transition-opacity duration-500`}></div>
+                <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 ${isActive ? 'opacity-10' : 'group-hover:opacity-5'} transition-opacity duration-500 pointer-events-none`}></div>
 
                 {/* Icon & Title */}
-                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br ${cat.color} shadow-lg`}>
+                <div className={`relative z-10 w-14 h-14 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br ${cat.color} shadow-lg`}>
                   <Icon size={28} className="text-white" />
                 </div>
-                <h3 className="text-2xl font-bold font-display mb-2">{cat.name}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed mb-6 h-10">{cat.description}</p>
+                <h3 className="relative z-10 text-2xl font-bold font-display mb-2">{cat.name}</h3>
+                <p className="relative z-10 text-slate-400 text-sm leading-relaxed mb-6 min-h-[2.5rem]">{cat.description}</p>
 
                 {/* Apps List (Visible when active) */}
-                <div className={`space-y-3 transition-all duration-500 overflow-hidden ${isActive ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="h-px w-full bg-white/10 my-4"></div>
+                <div className={`relative z-10 space-y-3 transition-all duration-500 ${isActive ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0 overflow-hidden'}`}>
+                  <div className="h-px w-full bg-white/10 mb-4"></div>
                   <h4 className="text-xs uppercase text-slate-500 font-bold tracking-wider mb-3">可用应用</h4>
                   
                   {cat.apps.map((app) => (
@@ -107,13 +107,16 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                       key={app.id}
                       disabled={!app.available}
                       onClick={(e) => {
-                        e.stopPropagation();
-                        if (app.available) onNavigate(app.id);
+                        e.stopPropagation(); // Prevent card click
+                        if (app.available) {
+                            console.log("Navigating to:", app.id);
+                            onNavigate(app.id);
+                        }
                       }}
                       className={`
-                        w-full text-left p-3 rounded-lg flex items-center justify-between group/btn border border-transparent
+                        w-full text-left p-3 rounded-lg flex items-center justify-between group/btn border border-transparent transition-all duration-200
                         ${app.available 
-                            ? 'bg-white/5 hover:bg-white/10 hover:border-white/10 cursor-pointer' 
+                            ? 'bg-white/5 hover:bg-white/10 hover:border-white/20 cursor-pointer shadow-sm hover:shadow-md' 
                             : 'bg-transparent opacity-50 cursor-not-allowed'
                         }
                       `}
@@ -125,7 +128,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                         <div className="text-[10px] text-slate-500">{app.desc}</div>
                       </div>
                       {app.available ? (
-                        <ArrowRight size={16} className="text-slate-500 group-hover/btn:text-white transition-colors" />
+                        <ArrowRight size={16} className="text-slate-500 group-hover/btn:text-white transition-colors transform group-hover/btn:translate-x-1" />
                       ) : (
                         <Lock size={14} className="text-slate-600" />
                       )}

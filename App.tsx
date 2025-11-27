@@ -8,10 +8,12 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('home');
 
   const handleNavigate = (route: string) => {
+    console.log("App handling navigation to:", route);
     if (route === 'solar-system') {
       setCurrentView('solar-system');
+    } else {
+        console.warn("Unknown route:", route);
     }
-    // Expand here for future apps
   };
 
   const handleBackToHome = () => {
@@ -19,7 +21,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen bg-slate-950 text-white">
+    <div className="w-full h-screen bg-slate-950 text-white overflow-hidden">
       {currentView === 'home' && (
         <HomePage onNavigate={handleNavigate} />
       )}
