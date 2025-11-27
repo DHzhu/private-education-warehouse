@@ -1,0 +1,5 @@
+{
+  "name": "Solaris Explorer",
+  "description": "一个交互式的实时太阳系模拟应用。可视化行星轨道，通过 Gemini AI 了解天体知识，并控制宇宙时间的流动。",
+  "requestFramePermissions": []
+}
