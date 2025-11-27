@@ -13,10 +13,10 @@ interface SolarSystemProps {
 const FLATTEN_RATIO = 0.4;
 
 const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, selectedBodyId }) => {
-  // Initialize with window dimensions to prevent initial (0,0) render issue
+  // Initialize with non-zero default to avoid division by zero errors in viewBox
   const [dimensions, setDimensions] = useState({ 
-    width: window.innerWidth, 
-    height: window.innerHeight 
+    width: 1, 
+    height: 1 
   });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -25,20 +25,31 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, sel
   const lastMousePos = useRef({ x: 0, y: 0 });
   const dragDistanceRef = useRef(0);
 
+  // Use ResizeObserver for robust dimension tracking
   useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) {
-        setDimensions({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight
-        });
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        // Ensure we don't set zero dimensions if hidden momentarily
+        if (width > 0 && height > 0) {
+            setDimensions({ width, height });
+        }
       }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Call immediately to ensure correct size
-    
-    return () => window.removeEventListener('resize', handleResize);
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    // Initial check (in case observer fires late)
+    if (containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
+        setDimensions({
+            width: containerRef.current.clientWidth,
+            height: containerRef.current.clientHeight
+        });
+    }
+
+    return () => resizeObserver.disconnect();
   }, []);
 
   // Center coordinates
@@ -172,9 +183,6 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, sel
             const ringGradientId = `ring-gradient-${body.id}`;
             const hasRings = !!body.rings;
             
-            // NOTE: We no longer render rings manually if the 'rings' property is missing.
-            // This allows us to use an image that already contains rings for better realism.
-
             return (
               <g 
                 key={body.id} 
@@ -259,7 +267,7 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, sel
 
                 {/* 
                   ROTATED GROUP
-                  Groups the Planet Body and Moons so they share the same axial tilt.
+                  Groups the Planet Body, Rings, and Moons so they share the same axial tilt.
                 */}
                 <g transform={`rotate(${tilt})`}>
                     
@@ -271,8 +279,6 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, sel
                             y={-body.radius} 
                             width={body.radius * 2} 
                             height={body.radius * 2}
-                            // Only clip if it's not a square image that needs to show rings outside the radius
-                            // But here we generally treat the body radius as the image boundary for consistency
                             clipPath={`url(#clip-${body.id})`}
                             preserveAspectRatio="xMidYMid slice"
                         />
@@ -280,7 +286,7 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, sel
                         <circle r={body.radius} fill={body.color} />
                     )}
 
-                    {/* SVG Rings - Only rendered if defined in constants (Removed for Saturn now) */}
+                    {/* SVG Rings */}
                     {hasRings && body.rings && (
                         <path
                             d={`M ${body.rings.outerRadius} 0 A ${body.rings.outerRadius} ${body.rings.outerRadius * FLATTEN_RATIO} 0 1 0 -${body.rings.outerRadius} 0 A ${body.rings.outerRadius} ${body.rings.outerRadius * FLATTEN_RATIO} 0 1 0 ${body.rings.outerRadius} 0
@@ -299,15 +305,9 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, sel
 
                     {/* Moons - Inside rotated group so they orbit the equator */}
                     {body.moons && body.moons.map((moon) => {
-                        // For planets with tilted rings (Saturn), moons should orbit in the ring plane.
-                        // The ring plane is flattened by FLATTEN_RATIO.
-                        // So the moon's Y position must also be flattened.
-                        
                         const angle = (time / moon.period) * 2 * Math.PI;
                         const moonX = Math.cos(angle) * moon.orbitRadius;
                         
-                        // Apply flattening if parent is tilted (Saturn) to match the perspective
-                        // We check the tilt variable directly or body.id
                         const effectiveYScale = tilt !== 0 ? FLATTEN_RATIO : 1.0; 
                         const moonY = Math.sin(angle) * moon.orbitRadius * effectiveYScale;
 
@@ -355,7 +355,7 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ time, zoom, onBodySelect, sel
                     })}
                 </g>
 
-                {/* Label (Outside rotation so it stays horizontal) */}
+                {/* Label */}
                 <text
                   y={body.radius + (body.rings ? 25 : 12) / zoom + 5}
                   textAnchor="middle"
